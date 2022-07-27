@@ -10,6 +10,8 @@
 
     * Remove the three `confluent_kafka_acl` resources. These resources are provisioned using the Kafka REST API, which is only accessible from the private network.
 
+    * Remove the `confluent_kafka_topic` resource. These resources are provisioned using the Kafka REST API, which is only accessible from the private network.
+
 2. Go to the following URL using your AD tenant ID (`<tenant-id>`) and approve:
 
     ```
@@ -32,7 +34,7 @@
 
 3. One commmon deployment workflow for environments with private networking is as follows:
 
-    * A initial (centrally-run) Terraform deployment provisions infrastructure: network, Kafka cluster, and private network connectivity
+    * A initial (centrally-run) Terraform deployment provisions infrastructure: network, Kafka cluster, and other resources on cloud provider of your choice to setup private network connectivity (like DNS records)
 
     * A secondary Terraform deployment (run from within the private network) provisions data-plane resources (Kafka Topics and ACLs)
 

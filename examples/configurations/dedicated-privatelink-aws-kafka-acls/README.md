@@ -10,13 +10,14 @@
 
     * Remove the three `confluent_kafka_acl` resources. These resources are provisioned using the Kafka REST API, which is only accessible from the private network.
 
+    * Remove the `confluent_kafka_topic` resource. These resources are provisioned using the Kafka REST API, which is only accessible from the private network.
+
 2. One commmon deployment workflow for environments with private networking is as follows:
 
-    * A initial (centrally-run) Terraform deployment provisions infrastructure: network, Kafka cluster, and private network connectivity
+    * A initial (centrally-run) Terraform deployment provisions infrastructure: network, Kafka cluster, and other resources on cloud provider of your choice to setup private network connectivity (like DNS records)
 
     * A secondary Terraform deployment (run from within the private network) provisions data-plane resources (Kafka Topics and ACLs)
 
     * Note that RBAC role bindings can be provisioned in either the first or second step, as they are provisioned through the Confluent Cloud REST API, not the Kafka cluster API
-
 
 3. See [AWS PrivateLink](https://docs.confluent.io/cloud/current/networking/private-links/aws-privatelink.html) for more details.
