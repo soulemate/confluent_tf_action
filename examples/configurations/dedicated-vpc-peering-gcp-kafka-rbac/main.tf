@@ -112,6 +112,8 @@ resource "confluent_api_key" "app-manager-kafka-api-key" {
   ]
 }
 
+// Provisioning Kafka Topics requires access to the REST endpoint on the Kafka cluster
+// If Terraform is not run from within the private network, this will not work
 resource "confluent_kafka_topic" "orders" {
   kafka_cluster {
     id = confluent_kafka_cluster.dedicated.id

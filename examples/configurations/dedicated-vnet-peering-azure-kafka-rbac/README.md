@@ -2,30 +2,40 @@
 
 1. This example assumes that Terraform is run from a host in the private network, where it will have connectivity to the Kafka REST API. If it is not, you must make these changes:
 
-  * Update the `confluent_api_key` resources by setting their `disable_wait_for_ready` flag to `true`. Otherwise, Terraform will attempt to validate API key creation by listing topics, which will fail without access to the Kafka REST API. Check the [Kafka REST API docs](https://docs.confluent.io/cloud/current/api.html#tag/Topic-(v3)) to learn more about it. Otherwise, you might see errors like:
+    * Update the `confluent_api_key` resources by setting their `disable_wait_for_ready` flag to `true`. Otherwise, Terraform will attempt to validate API key creation by listing topics, which will fail without access to the Kafka REST API. Check the [Kafka REST API docs](https://docs.confluent.io/cloud/current/api.html#tag/Topic-(v3)) to learn more about it. Otherwise, you might see errors like:
 
-    ```
-    Error: error waiting for Kafka API Key "[REDACTED]" to sync: error listing Kafka Topics using Kafka API Key "[REDACTED]": Get "[https://[REDACTED]/kafka/v3/clusters/[REDACTED]/topics](https://[REDACTED]/kafka/v3/clusters/[REDACTED]/topics)": GET [https://[REDACTED]/kafka/v3/clusters/[REDACTED]/topics](https://[REDACTED]/kafka/v3/clusters/[REDACTED]/topics) giving up after 5 attempt(s): Get "[https://[REDACTED]/kafka/v3/clusters/[REDACTED]/topics](https://[REDACTED]/kafka/v3/clusters/[REDACTED/topics)": dial tcp [REDACTED]:443: i/o timeout
-    ```
+        ```
+        Error: error waiting for Kafka API Key "[REDACTED]" to sync: error listing Kafka Topics using Kafka API Key "[REDACTED]": Get "[https://[REDACTED]/kafka/v3/clusters/[REDACTED]/topics](https://[REDACTED]/kafka/v3/clusters/[REDACTED]/topics)": GET [https://[REDACTED]/kafka/v3/clusters/[REDACTED]/topics](https://[REDACTED]/kafka/v3/clusters/[REDACTED]/topics) giving up after 5 attempt(s): Get "[https://[REDACTED]/kafka/v3/clusters/[REDACTED]/topics](https://[REDACTED]/kafka/v3/clusters/[REDACTED/topics)": dial tcp [REDACTED]:443: i/o timeout
+        ```
 
 2. Go to the following URL using your AD tenant ID (`<tenant-id>`) and approve:
 
-```
-https://login.microsoftonline.com/<tenant-id>/oauth2/authorize?client_id=f0955e3a-9013-4cf4-a1ea-21587621c9cc&response_type=code
-```
+    ```
+    https://login.microsoftonline.com/<tenant-id>/oauth2/authorize?client_id=f0955e3a-9013-4cf4-a1ea-21587621c9cc&response_type=code
+    ```
 
-before applying the configuration.
+    before applying the configuration.
 
-Also make sure you service principal has got "Directory Readers" role assigned. Otherwise, you might receive the following error:
-```bash
-Error: Listing service principals for filter "appId eq 'f0955e3a-9013-4cf4-a1ea-21587621c9cc'"
+    Also make sure you service principal has got "Directory Readers" role assigned. Otherwise, you might receive the following error:
+    
+    ```bash
+    Error: Listing service principals for filter "appId eq 'f0955e3a-9013-4cf4-a1ea-21587621c9cc'"
 
-  on main.tf line 248, in data "azuread_service_principal" "peering_creator":
- 248: data "azuread_service_principal" "peering_creator" {
+      on main.tf line 248, in data "azuread_service_principal" "peering_creator":
+    248: data "azuread_service_principal" "peering_creator" {
 
-ServicePrincipalsClient.BaseClient.Get(): unexpected status 403 with OData
-error: Authorization_RequestDenied: Insufficient privileges to complete the
-operation.
-```
+    ServicePrincipalsClient.BaseClient.Get(): unexpected status 403 with OData
+    error: Authorization_RequestDenied: Insufficient privileges to complete the
+    operation.
+    ```
 
-3. See [VNet Peering on Azure](https://docs.confluent.io/cloud/current/networking/peering/azure-peering.html) for more details.
+3. One commmon deployment workflow for environments with private networking is as follows:
+
+    * A initial (centrally-run) Terraform deployment provisions infrastructure: network, Kafka cluster, and private network connectivity
+
+    * A secondary Terraform deployment (run from within the private network) provisions data-plane resources (Kafka Topics and ACLs)
+
+    * Note that RBAC role bindings can be provisioned in either the first or second step, as they are provisioned through the Confluent Cloud REST API, not the Kafka cluster API
+
+
+4. See [VNet Peering on Azure](https://docs.confluent.io/cloud/current/networking/peering/azure-peering.html) for more details.

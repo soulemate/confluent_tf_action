@@ -2,13 +2,13 @@
 
 1. This example assumes that Terraform is run from a host in the private network, where it will have connectivity to the Kafka REST API. If it is not, you must make these changes:
 
-  * Update the `confluent_api_key` resources by setting their `disable_wait_for_ready` flag to `true`. Otherwise, Terraform will attempt to validate API key creation by listing topics, which will fail without access to the Kafka REST API. Check the [Kafka REST API docs](https://docs.confluent.io/cloud/current/api.html#tag/Topic-(v3)) to learn more about it. Otherwise, you might see errors like:
+    * Update the `confluent_api_key` resources by setting their `disable_wait_for_ready` flag to `true`. Otherwise, Terraform will attempt to validate API key creation by listing topics, which will fail without access to the Kafka REST API. Check the [Kafka REST API docs](https://docs.confluent.io/cloud/current/api.html#tag/Topic-(v3)) to learn more about it. Otherwise, you might see errors like:
 
-    ```
-    Error: error waiting for Kafka API Key "[REDACTED]" to sync: error listing Kafka Topics using Kafka API Key "[REDACTED]": Get "[https://[REDACTED]/kafka/v3/clusters/[REDACTED]/topics](https://[REDACTED]/kafka/v3/clusters/[REDACTED]/topics)": GET [https://[REDACTED]/kafka/v3/clusters/[REDACTED]/topics](https://[REDACTED]/kafka/v3/clusters/[REDACTED]/topics) giving up after 5 attempt(s): Get "[https://[REDACTED]/kafka/v3/clusters/[REDACTED]/topics](https://[REDACTED]/kafka/v3/clusters/[REDACTED/topics)": dial tcp [REDACTED]:443: i/o timeout
-    ```
+        ```
+        Error: error waiting for Kafka API Key "[REDACTED]" to sync: error listing Kafka Topics using Kafka API Key "[REDACTED]": Get "[https://[REDACTED]/kafka/v3/clusters/[REDACTED]/topics](https://[REDACTED]/kafka/v3/clusters/[REDACTED]/topics)": GET [https://[REDACTED]/kafka/v3/clusters/[REDACTED]/topics](https://[REDACTED]/kafka/v3/clusters/[REDACTED]/topics) giving up after 5 attempt(s): Get "[https://[REDACTED]/kafka/v3/clusters/[REDACTED]/topics](https://[REDACTED]/kafka/v3/clusters/[REDACTED/topics)": dial tcp [REDACTED]:443: i/o timeout
+        ```
 
-  * Remove the three `confluent_kafka_acl` resources. These resources are provisioned using the Kafka REST API, which is only accessible from the private network.
+    * Remove the three `confluent_kafka_acl` resources. These resources are provisioned using the Kafka REST API, which is only accessible from the private network.
 
 2. Apply Terraform configuration in 2 steps:
 
@@ -17,16 +17,16 @@
     terraform apply -target=confluent_network.private-link
     ```
 
-   If you run into
+    If you run into
 
     ```
     Error: Invalid function argument
-    
+
       on main.tf line 249, in locals:
-     249:   ]) > 0 ? file("\n\nerror: private link endpoint network policies must be disabled https://docs.microsoft.com/en-us/azure/private-link/disable-private-endpoint-network-policy") : ""
-    
+      249:   ]) > 0 ? file("\n\nerror: private link endpoint network policies must be disabled https://docs.microsoft.com/en-us/azure/private-link/disable-private-endpoint-network-policy") : ""
+
     Invalid value for "path" parameter: no file exists at
-    
+
     error: private link endpoint network policies must be disabled
     https:/docs.microsoft.com/en-us/azure/private-link/disable-private-endpoint-network-policy;
     this function works only with files that are distributed as part of the
@@ -35,7 +35,7 @@
     that resource.
     ```
 
-   You may need to run the following command:
+    You may need to run the following command:
 
     ```
     az network vnet subnet update \
@@ -44,12 +44,22 @@
       --resource-group myResourceGroup \
       --vnet-name myVirtualNetwork
     ```
-   For more information, see [Disable network policy](https://docs.microsoft.com/en-us/azure/private-link/disable-private-endpoint-network-policy).
+    For more information, see [Disable network policy](https://docs.microsoft.com/en-us/azure/private-link/disable-private-endpoint-network-policy).
 
-   In order to apply remaining changes run
+    In order to apply remaining changes run:
+
     ```
     # Creates others resources (except already created environment and network) declared in main.tf
     terraform apply
     ```
 
-3. See [Use Azure Private Link](https://docs.confluent.io/cloud/current/networking/private-links/azure-privatelink.html) for more details.
+3. One commmon deployment workflow for environments with private networking is as follows:
+
+    * A initial (centrally-run) Terraform deployment provisions infrastructure: network, Kafka cluster, and private network connectivity
+
+    * A secondary Terraform deployment (run from within the private network) provisions data-plane resources (Kafka Topics and ACLs)
+
+    * Note that RBAC role bindings can be provisioned in either the first or second step, as they are provisioned through the Confluent Cloud REST API, not the Kafka cluster API
+
+
+4. See [Use Azure Private Link](https://docs.confluent.io/cloud/current/networking/private-links/azure-privatelink.html) for more details.
